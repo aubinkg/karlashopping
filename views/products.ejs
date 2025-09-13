@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nos Produits</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+  <%- include('partials/header') %>
+
+  <main style="max-width:1000px;margin:40px auto;padding:0 20px;text-align:center;">
+    <h2>🛒 Nos Produits</h2>
+    <p>Découvrez notre sélection exclusive !</p>
+
+    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px,1fr)); gap:20px; margin-top:30px;">
+      <div style="background:#fff; color:#333; border-radius:10px; padding:20px; box-shadow:0 2px 8px rgba(0,0,0,0.1);">
+        <h3>Produit A</h3>
+        <p>Super qualité</p>
+      </div>
+      <div style="background:#fff; color:#333; border-radius:10px; padding:20px; box-shadow:0 2px 8px rgba(0,0,0,0.1);">
+        <h3>Produit B</h3>
+        <p>Livraison rapide</p>
+      </div>
+      <!-- Ajoute d'autres cartes produit ici -->
+    </div>
+  </main>
+
+  <%- include('partials/footer') %>
+
+</body>
+</html>

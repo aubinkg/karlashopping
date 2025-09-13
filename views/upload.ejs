@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %></title>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family:'Roboto', sans-serif; background:#f5f6fa; color:#333; line-height:1.6; padding-bottom:50px; }
+    header, footer { background:#1e3c72; color:#fff; padding:15px 30px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; }
+    header a, footer a { color:#fff; text-decoration:none; margin-left:15px; }
+    main { max-width:600px; margin:50px auto; background:#fff; padding:30px; border-radius:10px; box-shadow:0 4px 12px rgba(0,0,0,0.1); }
+    h1 { text-align:center; margin-bottom:20px; }
+    input, select, textarea, button { width:100%; margin:10px 0; padding:10px; border-radius:5px; border:1px solid #ccc; }
+    button { background:#1e3c72; color:#fff; font-weight:bold; border:none; cursor:pointer; transition:0.3s; }
+    button:hover { background:#4b6cb7; }
+    label { font-weight:bold; margin-top:10px; display:block; }
+    small { display:block; margin-top:-8px; margin-bottom:10px; font-size:0.9rem; color:#555; }
+    .preview-container { display:flex; flex-wrap:wrap; gap:10px; margin-top:10px; }
+    .preview-container img { width:100px; height:100px; object-fit:cover; border-radius:5px; border:1px solid #ccc; }
+    @media (max-width:600px){
+      main { margin:20px; padding:20px; }
+      .preview-container img { width:70px; height:70px; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>Karla Shopping</h1>
+  <nav>
+    <a href="/">Accueil</a>
+    <a href="/products">Produits</a>
+    <a href="/logout">Déconnexion</a>
+  </nav>
+</header>
+
+<main>
+  <h1>Upload d’un produit</h1>
+  <form action="/upload" method="POST" enctype="multipart/form-data">
+    <label>Titre</label>
+    <input type="text" name="title" placeholder="Titre" required>
+
+    <label>Marque</label>
+    <input type="text" name="brand" placeholder="Marque" required>
+
+    <label>Prix (€)</label>
+    <input type="number" step="0.01" name="price" placeholder="Prix" required>
+
+    <label>Quantité</label>
+    <input type="number" name="quantity" placeholder="Quantité" required>
+
+    <label for="category">Catégorie :</label>
+    <select name="category" id="category" required>
+      <option value="Autre">Autre</option>
+      <option value="Electronique">Electronique</option>
+      <option value="Vêtements">Vêtements</option>
+      <option value="Maison">Maison</option>
+      <option value="Accessoires photo">Accessoires photo</option>
+      <option value="Mobilité">Mobilité</option>
+      <option value="Outils & maintenance">Outils & maintenance</option>
+      <option value="Sport & plein air">Sport & plein air</option>
+      <option value="Informatique">Informatique</option>
+      <option value="Téléphonie">Téléphonie</option>
+      <option value="Papeterie & organisation">Papeterie & organisation</option>
+      <option value="Packaging & logistique">Packaging & logistique</option>
+      <option value="Développement & UX">Développement & UX</option>
+      <option value="Énergie & alimentation">Énergie & alimentation</option>
+    </select>
+
+    <label>État</label>
+    <select name="condition" required>
+      <option value="">Sélectionnez</option>
+      <option value="Neuf">Neuf</option>
+      <option value="Occasion">Occasion</option>
+    </select>
+
+    <label>Description</label>
+    <textarea name="description" placeholder="Description"></textarea>
+
+    <label>Caractéristiques</label>
+    <textarea name="features" placeholder="Caractéristiques"></textarea>
+
+    <label>Localisation</label>
+    <input type="text" name="location" placeholder="Localisation" required>
+
+    <label>Type de livraison</label>
+    <select name="delivery" required>
+      <option value="">Sélectionnez</option>
+      <option value="Standard">Standard</option>
+      <option value="Express">Express</option>
+    </select>
+
+    <label>Image principale</label>
+    <input type="file" name="main_image" accept="image/*" required>
+
+    <label>Images secondaires (max 5)</label>
+    <input type="file" accept="image/*" multiple id="secondaryImages">
+    <small id="fileCount">0 / 5 fichiers sélectionnés</small>
+    <div class="preview-container" id="previewContainer"></div>
+
+    <button type="submit">Upload</button>
+  </form>
+</main>
+
+<footer>
+  <div>© 2025 Karla Shopping</div>
+  <div>
+    <a href="#">Facebook</a>
+    <a href="#">Instagram</a>
+    <a href="#">Twitter</a>
+  </div>
+</footer>
+
+<script>
+const mainInput = document.querySelector('input[name="main_image"]');
+const secondaryInput = document.getElementById('secondaryImages');
+const previewContainer = document.getElementById('previewContainer');
+const fileCount = document.getElementById('fileCount');
+
+let selectedFiles = []; // Toutes les images (principales + secondaires)
+
+// Ajouter image principale
+mainInput.addEventListener('change', (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  if (selectedFiles.length >= 5) {
+    alert('Vous pouvez sélectionner au maximum 5 images');
+    mainInput.value = '';
+    return;
+  }
+  // Remplace la principale si déjà présente
+  selectedFiles = selectedFiles.filter(f => !f.isMain);
+  file.isMain = true; // Marque comme principale
+  selectedFiles.unshift(file); // Toujours en tête
+  updatePreview();
+});
+
+// Ajouter images secondaires
+secondaryInput.addEventListener('change', (e) => {
+  const files = Array.from(e.target.files);
+  if (selectedFiles.length + files.length > 5) {
+    alert('Vous pouvez sélectionner au maximum 5 images');
+    return;
+  }
+  files.forEach(f => f.isMain = false);
+  selectedFiles = selectedFiles.concat(files);
+  updatePreview();
+  secondaryInput.value = '';
+});
+
+// Fonction pour afficher les aperçus
+function updatePreview() {
+  previewContainer.innerHTML = '';
+  selectedFiles.forEach((file, index) => {
+    const imgDiv = document.createElement('div');
+    imgDiv.style.position = 'relative';
+
+    const img = document.createElement('img');
+    img.src = URL.createObjectURL(file);
+    if (file.isMain) img.style.border = '2px solid #1e3c72';
+
+    const delBtn = document.createElement('button');
+    delBtn.innerHTML = '×';
+    delBtn.style.position = 'absolute';
+    delBtn.style.top = '2px';
+    delBtn.style.right = '2px';
+    delBtn.style.background = file.isMain ? '#1e3c72' : 'red';
+    delBtn.style.color = 'white';
+    delBtn.style.border = 'none';
+    delBtn.style.borderRadius = '50%';
+    delBtn.style.width = '20px';
+    delBtn.style.height = '20px';
+    delBtn.style.cursor = 'pointer';
+    delBtn.addEventListener('click', () => {
+      selectedFiles.splice(index, 1);
+      if(file.isMain) mainInput.value = ''; // Reset input principale si supprimée
+      updatePreview();
+    });
+
+    imgDiv.appendChild(img);
+    imgDiv.appendChild(delBtn);
+    previewContainer.appendChild(imgDiv);
+  });
+  fileCount.textContent = `${selectedFiles.length} / 5 fichiers sélectionnés`;
+}
+
+// Modale UX professionnelle
+function showSuccessModal(message) {
+  const modalBg = document.createElement('div');
+  modalBg.style.position = 'fixed';
+  modalBg.style.top = 0;
+  modalBg.style.left = 0;
+  modalBg.style.width = '100%';
+  modalBg.style.height = '100%';
+  modalBg.style.background = 'rgba(0,0,0,0.5)';
+  modalBg.style.display = 'flex';
+  modalBg.style.justifyContent = 'center';
+  modalBg.style.alignItems = 'center';
+  modalBg.style.zIndex = 1000;
+  modalBg.style.animation = 'fadeIn 0.3s ease';
+
+  const modal = document.createElement('div');
+  modal.style.background = '#fff';
+  modal.style.padding = '25px 30px';
+  modal.style.borderRadius = '12px';
+  modal.style.textAlign = 'center';
+  modal.style.maxWidth = '350px';
+  modal.style.boxShadow = '0 8px 20px rgba(0,0,0,0.2)';
+  modal.innerHTML = `
+    <h2 style="color:#1e3c72;margin-bottom:10px;">Succès !</h2>
+    <p>${message}</p>
+  `;
+
+  modalBg.appendChild(modal);
+  document.body.appendChild(modalBg);
+
+  // Disparition et redirection
+  setTimeout(() => {
+    document.body.removeChild(modalBg);
+    window.location.href = '/'; // index.ejs
+  }, 3000);
+}
+
+// Soumission du formulaire
+const form = document.querySelector('form');
+form.addEventListener('submit', (e) => {
+  e.preventDefault();
+  if(selectedFiles.length === 0){
+    alert('Veuillez sélectionner au moins une image');
+    return;
+  }
+  const formData = new FormData(form);
+  selectedFiles.forEach(file => formData.append('secondary_images', file));
+
+  fetch(form.action, { method: 'POST', body: formData })
+    .then(res => res.text())
+    .then(res => showSuccessModal('Votre produit a été uploadé avec succès !'))
+    .catch(err => alert('Erreur: ' + err));
+});
+</script>
+
+
+</body>
+</html>

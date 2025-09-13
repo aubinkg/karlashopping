@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Créer un compte</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <%- include('partials/header') %>
+
+  <main style="max-width:400px;margin:50px auto;text-align:center;">
+    <h2>📝 Créer un compte</h2>
+    <form action="/signup" method="POST" style="display:flex;flex-direction:column;gap:15px;margin-top:20px;">
+      <input type="email" name="email" placeholder="Email" required style="padding:10px;border-radius:5px;border:1px solid #ccc;">
+      <input type="password" name="password" placeholder="Mot de passe" required style="padding:10px;border-radius:5px;border:1px solid #ccc;">
+      <label style="display:flex;align-items:center;justify-content:center;gap:10px;">
+        <input type="checkbox" name="isAdmin">
+        Administrateur
+      </label>
+      <button type="submit" style="padding:10px;background:#1e3c72;color:#fff;border:none;border-radius:5px;font-weight:bold;cursor:pointer;">Créer mon compte</button>
+    </form>
+    <p style="margin-top:15px;">Déjà un compte ? <a href="/login">Se connecter</a></p>
+  </main>
+
+  <%- include('partials/footer') %>
+</body>
+</html>
