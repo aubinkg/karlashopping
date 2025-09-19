@@ -4,20 +4,14 @@
     <a href="/">Accueil</a>
     <a href="/products">Produits</a>
 
-    <% if (session.user) { %>
-      <!-- Utilisateur connecté -->
-      <span style="color:#fff; margin:0 10px;">
-        Membre actif : <%= session.user.email %>
-      </span>
+    <% if (session?.user) { %>
+      <span style="color:#fff; margin:0 10px;">Membre actif</span>
       <a href="/logout">Déconnexion</a>
 
       <% if (session.isAdmin) { %>
-        <!-- Seul admin voit Upload -->
         <a href="/upload">Upload</a>
       <% } %>
-
     <% } else { %>
-      <!-- Utilisateur non connecté -->
       <a href="#" id="btnLogin">Connexion</a>
       <a href="#" id="btnSignup">Créer un compte</a>
     <% } %>

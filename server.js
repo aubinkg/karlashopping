@@ -277,30 +277,76 @@ app.post('/product/delete/:id', async (req, res) => {
 });
 
 // Page détail produit
-app.get('/product/:id', async (req, res) => {
-  const productId = req.params.id;
+app.get('/catalogue', async (req, res) => {
+  const { q, category, brand, price_min, price_max, condition, is_available } = req.query;
 
   try {
-    // Récupérer le produit depuis Supabase
-    const { data: product, error } = await supabase
-      .from('data')
-      .select('*')
-      .eq('id', productId)
-      .maybeSingle();
+    let query = supabase.from('data').select('*');
 
-    if (error) throw error;
-    if (!product) return res.status(404).send('Produit non trouvé');
+    // Recherche texte
+    if (q && q.trim() !== '') {
+      query = query.or(`title.ilike.%${q.trim()}%,description.ilike.%${q.trim()}%`);
+    }
 
-    res.render('product_detail', {
-      title: product.title,
-      product
-    });
+    // Filtre catégorie
+    if (category && category.trim() !== '') {
+      query = query.eq('category', category.trim());
+    }
 
+    // Filtre marque
+    if (brand && brand.trim() !== '') {
+      query = query.ilike('brand', `%${brand.trim()}%`);
+    }
+
+    // Filtre prix
+    if (price_min) query = query.gte('price', Number(price_min));
+    if (price_max) query = query.lte('price', Number(price_max));
+
+    // Filtre condition
+    if (condition && condition.trim() !== '') {
+      query = query.eq('condition', condition.trim());
+    }
+
+    // Filtre disponibilité
+    if (is_available === 'true') query = query.eq('is_available', true);
+    if (is_available === 'false') query = query.eq('is_available', false);
+
+    const { data: products, error } = await query;
+
+    if (error) {
+      console.error('Erreur Supabase:', error);
+      return res.render('catalogue', { products: [], filters: req.query });
+    }
+
+    res.render('catalogue', { products, filters: req.query });
   } catch (err) {
-    console.error(err);
-    res.status(500).send('Erreur serveur : ' + err.message);
+    console.error('Erreur serveur:', err);
+    res.render('catalogue', { products: [], filters: req.query });
   }
 });
+// en bas de server.js
+// Page détail produit
+// Page détail produit
+app.get('/produit/:id', async (req, res) => {
+  const { id } = req.params;
+
+  const { data: product, error } = await supabase
+    .from('data')
+    .select('*')
+    .eq('id', id)
+    .single();
+
+  if (error || !product) {
+    return res.status(404).render('404', { message: 'Produit introuvable' });
+  }
+
+  // On envoie aussi un titre à la vue
+  res.render('product_detail', {
+    title: product.title,
+    product
+  });
+});
+
 
 
 

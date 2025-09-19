@@ -127,10 +127,26 @@
         <p><%= product.description %></p>
       </div>
 
-      <div class="actions">
-        <a href="/" class="btn-back"><i class="fa-solid fa-arrow-left"></i> Retour</a>
-        <a href="/payment/<%= product.id %>" class="btn-pay"><i class="fa-solid fa-cart-shopping"></i> Acheter</a>
-      </div>
+     <div class="actions">
+  <a href="/" class="btn-back">
+    <i class="fa-solid fa-arrow-left"></i> Retour
+  </a>
+
+  <a
+    class="btn-pay"
+    target="_blank"
+    href="https://wa.me/33768398397?text=<%= encodeURIComponent(
+      'Bonjour 👋, je suis intéressé par ce produit : ' +
+      product.title +
+      ' | Prix : €' + product.price +
+      ' | Quantité : ' + product.quantity +
+      ' | Image : ' + product.main_image_url
+    ) %>"
+  >
+    <i class="fa-solid fa-cart-shopping"></i> Acheter
+  </a>
+</div>
+
     </div>
   </div>
 

@@ -1,0 +1,107 @@
+<%- include('partials/header') %>
+
+<style>
+  body { font-family:'Roboto', sans-serif; background:#f5f6fa; color:#333; line-height:1.6; margin:0; }
+
+  /* --- Header & Footer hérités de index.ejs --- */
+  header { 
+    background:linear-gradient(90deg,#4b6cb7,#182848);
+    padding:15px 30px;
+    display:flex; justify-content:space-between;
+    align-items:center; position:sticky;
+    top:0; z-index:1000; flex-wrap:wrap;
+  }
+  header h1 { color:#fff; font-size:1.8rem; margin-bottom:10px; }
+  nav a { margin:5px 10px; color:#fff; text-decoration:none; font-weight:500; position:relative; }
+  nav a:hover::after { content:""; position:absolute; width:100%; height:2px; background:#fff; bottom:-3px; left:0; }
+
+  footer { background:#182848; color:#fff; text-align:center; padding:40px 20px; margin-top:50px; }
+  footer a { color:#4b6cb7; margin:0 8px; text-decoration:none; font-weight:500; }
+  footer a:hover { text-decoration:underline; }
+
+  /* --- Formulaire de filtre --- */
+  .filter-form { display:flex; flex-wrap:wrap; gap:10px; margin:20px 0; }
+  .filter-form input, .filter-form select, .filter-form button {
+    padding:8px 12px; border-radius:5px; border:1px solid #ccc; font-size:0.95rem;
+  }
+  .filter-form button {
+    background:#4b6cb7; color:#fff; border:none; cursor:pointer; transition:0.3s;
+  }
+  .filter-form button:hover { background:#1e3c72; }
+
+  /* --- Produits --- */
+  .products { display:grid; grid-template-columns:repeat(auto-fit,minmax(250px,1fr)); gap:20px; margin-top:30px; }
+  .product { background:#fff; border-radius:10px; overflow:hidden; box-shadow:0 4px 12px rgba(0,0,0,0.1); transition:0.3s; }
+  .product:hover { transform:translateY(-5px); box-shadow:0 8px 20px rgba(0,0,0,0.15); }
+  .product-image img { width:100%; height:200px; object-fit:cover; }
+  .product-info { padding:15px; }
+  .product-info h2 { font-size:1.2rem; color:#4b6cb7; margin-bottom:5px; }
+  .product-info p { margin:5px 0; }
+  .btn-details { display:inline-block; padding:8px 15px; background:#4b6cb7; color:#fff; border-radius:5px; text-decoration:none; margin-top:8px; transition:0.3s; }
+  .btn-details:hover { background:#1e3c72; }
+</style>
+
+<main>
+  <h1>Catalogue de produits</h1>
+  <p>Découvrez nos produits exclusifs, filtrables par catégorie, marque, prix, état et disponibilité.</p>
+
+  <!-- 🔍 Filtre avancé -->
+  <form action="/catalogue" method="GET" class="filter-form">
+    <input type="text" name="q" placeholder="Rechercher..." value="<%= filters.q || '' %>">
+    
+    <select name="category">
+      <option value="">Toutes les catégories</option>
+      <% const categories = [
+        "Autre","Electronique","Vêtements","Maison",
+        "Accessoires photo","Mobilité","Outils & maintenance",
+        "Sport & plein air","Informatique","Téléphonie",
+        "Papeterie & organisation","Packaging & logistique",
+        "Développement & UX","Énergie & alimentation"
+      ]; %>
+      <% categories.forEach(cat => { %>
+        <option value="<%= cat %>" <%= filters.category === cat ? 'selected' : '' %>><%= cat %></option>
+      <% }) %>
+    </select>
+
+    <input type="text" name="brand" placeholder="Marque" value="<%= filters.brand || '' %>">
+    <input type="number" name="price_min" placeholder="Prix min" value="<%= filters.price_min || '' %>">
+    <input type="number" name="price_max" placeholder="Prix max" value="<%= filters.price_max || '' %>">
+
+    <select name="condition">
+      <option value="">État</option>
+      <option value="Neuf" <%= filters.condition === 'Neuf' ? 'selected' : '' %>>Neuf</option>
+      <option value="Occasion" <%= filters.condition === 'Occasion' ? 'selected' : '' %>>Occasion</option>
+    </select>
+
+    <select name="is_available">
+      <option value="">Disponibilité</option>
+      <option value="true" <%= filters.is_available === 'true' ? 'selected' : '' %>>En stock</option>
+      <option value="false" <%= filters.is_available === 'false' ? 'selected' : '' %>>Rupture</option>
+    </select>
+
+    <button type="submit">Filtrer</button>
+  </form>
+
+  <!-- 🛒 Produits -->
+  <section class="products">
+    <% if (products && products.length > 0) { %>
+      <% products.forEach(product => { %>
+        <article class="product">
+          <div class="product-image">
+            <img src="<%= product.main_image_url %>" alt="<%= product.title %>">
+          </div>
+          <div class="product-info">
+            <h2><%= product.title %></h2>
+            <p><strong>Prix :</strong> $<%= product.price %></p>
+            <p><%= product.is_available ? '✅ En stock' : '❌ Rupture' %></p>
+            <a class="btn-details" href="/produit/<%= product.id %>">Voir détails</a>
+          </div>
+        </article>
+      <% }) %>
+    <% } else { %>
+      <p class="no-result">Aucun produit trouvé.</p>
+    <% } %>
+  </section>
+</main>
+
+<%- include('partials/footer') %>
