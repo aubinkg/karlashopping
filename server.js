@@ -1,4 +1,4 @@
- require('dotenv').config();
+require('dotenv').config();
 const express = require('express');
 const path = require('path');
 const session = require('express-session');
@@ -33,14 +33,12 @@ app.use((req, res, next) => {
 // ----------------- ROUTES -----------------
 
 // Page d'accueil
-// Page d'accueil avec affichage des produits
 app.get('/', async (req, res) => {
   try {
-    // Récupérer les produits depuis la table "data"
     const { data: products, error } = await supabase
       .from('data')
       .select('*')
-      .order('created_at', { ascending: false }); // si tu as un champ timestamp/created_at
+      .order('created_at', { ascending: false });
 
     if (error) throw error;
 
@@ -53,7 +51,7 @@ app.get('/', async (req, res) => {
         '✅ Service client 24/7',
         '✅ Paiement sécurisé',
       ],
-      products, // <-- on passe les produits au template
+      products,
     });
 
   } catch (err) {
@@ -67,7 +65,7 @@ app.get('/', async (req, res) => {
         '✅ Service client 24/7',
         '✅ Paiement sécurisé',
       ],
-      products: [], // pas de produits en cas d'erreur
+      products: [],
     });
   }
 });
@@ -86,17 +84,14 @@ app.get('/logout', (req, res) => {
 app.post('/signup', async (req, res) => {
   const { email, password } = req.body;
 
-  // Création compte
   const { data, error } = await supabase.auth.signUp({ email, password });
 
   if (error) {
-    // S'il existe déjà, on se connecte directement
     if (error.message.includes('User already registered')) {
       const { data: loginData, error: loginError } = await supabase.auth.signInWithPassword({ email, password });
       if (loginError) return res.send(loginError.message);
 
       const user = loginData.user;
-      // Vérifie si admin
       const { data: adminRecord } = await supabase
         .from('app_admins')
         .select('*')
@@ -111,7 +106,6 @@ app.post('/signup', async (req, res) => {
     return res.send(error.message);
   }
 
-  // Nouvel utilisateur
   const user = data.user;
   const { data: adminRecord } = await supabase
     .from('app_admins')
@@ -145,14 +139,11 @@ app.post('/login', async (req, res) => {
   res.redirect('/');
 });
 
-
 // --- Multer ---
 const multer = require('multer');
 const upload = multer({ storage: multer.memoryStorage() });
 
 // --- ROUTES UPLOAD ---
-
-// Page d’upload (GET) – réservé aux admins
 app.get('/upload', (req, res) => {
   if (!req.session.isAdmin) return res.status(403).send('Accès refusé');
   res.render('upload', { title: 'Upload Produit' });
@@ -160,15 +151,13 @@ app.get('/upload', (req, res) => {
 
 const { v4: uuidv4 } = require('uuid');
 
-// Fonction pour nettoyer le nom de fichier
 function sanitizeFileName(filename) {
   return filename
-    .normalize('NFD')                 // décompose accents
-    .replace(/[\u0300-\u036f]/g, '') // retire les accents
-    .replace(/[^a-zA-Z0-9.-]/g, '_'); // remplace les caractères spéciaux
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-zA-Z0-9.-]/g, '_');
 }
 
-// POST Upload – réservé aux admins
 app.post(
   '/upload',
   upload.fields([
@@ -195,7 +184,7 @@ app.post(
 
       const productFolder = `uploads/${Date.now()}`;
 
-      // --- Main image ---
+      // Main image
       const mainFile = req.files['main_image'][0];
       const safeMainName = sanitizeFileName(mainFile.originalname);
       const uniqueMainName = `${Date.now()}_${uuidv4()}_${safeMainName}`;
@@ -210,7 +199,7 @@ app.post(
 
       const mainImageUrl = supabase.storage.from('images').getPublicUrl(mainPath).data.publicUrl;
 
-      // --- Secondary images ---
+      // Secondary images
       let secondaryImageUrls = [];
       if (req.files['secondary_images']) {
         const files = req.files['secondary_images'].slice(0, 5);
@@ -231,7 +220,7 @@ app.post(
         }
       }
 
-      // --- Insert record in table ---
+      // Insert record
       const { error } = await supabase.from('data').insert([{
         user_id: userId,
         main_image_url: mainImageUrl,
@@ -257,26 +246,8 @@ app.post(
     }
   }
 );
-// Route pour supprimer un produit
-app.post('/product/delete/:id', async (req, res) => {
-  const productId = req.params.id;
 
-  try {
-    const { error } = await supabase
-      .from('data')
-      .delete()
-      .eq('id', productId);
-
-    if (error) throw error;
-
-     res.redirect('/');
-  } catch (err) {
-    console.error(err);
-    res.status(500).send('Erreur serveur : ' + err.message);
-  }
-});
-
-// Page détail produit
+// ROUTE CATALOGUE CORRIGÉE - avec isAdmin
 app.get('/catalogue', async (req, res) => {
   const { q, category, brand, price_min, price_max, condition, is_available } = req.query;
 
@@ -315,17 +286,28 @@ app.get('/catalogue', async (req, res) => {
 
     if (error) {
       console.error('Erreur Supabase:', error);
-      return res.render('catalogue', { products: [], filters: req.query });
+      return res.render('catalogue', { 
+        products: [], 
+        filters: req.query,
+        isAdmin: req.session.isAdmin || false // ← AJOUT DE isAdmin
+      });
     }
 
-    res.render('catalogue', { products, filters: req.query });
+    res.render('catalogue', { 
+      products: products || [], 
+      filters: req.query,
+      isAdmin: req.session.isAdmin || false // ← AJOUT DE isAdmin
+    });
   } catch (err) {
     console.error('Erreur serveur:', err);
-    res.render('catalogue', { products: [], filters: req.query });
+    res.render('catalogue', { 
+      products: [], 
+      filters: req.query,
+      isAdmin: req.session.isAdmin || false // ← AJOUT DE isAdmin
+    });
   }
 });
-// en bas de server.js
-// Page détail produit
+
 // Page détail produit
 app.get('/produit/:id', async (req, res) => {
   const { id } = req.params;
@@ -340,15 +322,92 @@ app.get('/produit/:id', async (req, res) => {
     return res.status(404).render('404', { message: 'Produit introuvable' });
   }
 
-  // On envoie aussi un titre à la vue
   res.render('product_detail', {
     title: product.title,
-    product
+    product,
+    isAdmin: req.session.isAdmin || false // ← AJOUT DE isAdmin pour la page détail aussi
   });
 });
 
+// Route pour supprimer un produit (POST) - AVEC LOGS
+app.post('/product/delete/:id', async (req, res) => {
+    console.log('=== TENTATIVE DE SUPPRESSION ===');
+    console.log('URL appelée:', req.originalUrl);
+    console.log('Méthode:', req.method);
+    console.log('Session user:', req.session.user);
+    console.log('isAdmin:', req.session.isAdmin);
+    console.log('Product ID:', req.params.id);
+    
+    // Vérifier si l'utilisateur est admin
+    if (!req.session.isAdmin) {
+        console.log('❌ ACCÈS REFUSÉ - Pas admin');
+        return res.status(403).send('Accès non autorisé');
+    }
 
+    const productId = req.params.id;
 
+    try {
+        console.log('🗑️ Suppression du produit ID:', productId);
+        
+        // Vérifiez d'abord si le produit existe
+        const { data: existingProduct, error: findError } = await supabase
+            .from('data')
+            .select('id')
+            .eq('id', productId)
+            .single();
+            
+        if (findError || !existingProduct) {
+            console.log('❌ Produit non trouvé');
+            return res.status(404).send('Produit non trouvé');
+        }
+        
+        console.log('✅ Produit trouvé, suppression...');
+        
+        const { data, error } = await supabase
+            .from('data')
+            .delete()
+            .eq('id', productId);
+
+        console.log('Résultat Supabase:', { data, error });
+
+        if (error) throw error;
+
+        console.log('✅ Produit supprimé avec succès');
+        res.redirect('/catalogue');
+        
+    } catch (err) {
+        console.error('❌ Erreur suppression:', err);
+        res.status(500).send('Erreur serveur : ' + err.message);
+    }
+});
+
+// Route API pour supprimer un produit (DELETE)
+app.delete('/api/products/:id', async (req, res) => {
+  try {
+    // Vérifier si l'utilisateur est admin via la session
+    if (!req.session.isAdmin) {
+      return res.status(403).json({ error: 'Accès non autorisé' });
+    }
+
+    const productId = req.params.id;
+    
+    // Supprime le produit
+    const { error: deleteError } = await supabase
+      .from('data') // Utilisez 'data' au lieu de 'products'
+      .delete()
+      .eq('id', productId);
+        
+    if (deleteError) {
+      throw deleteError;
+    }
+    
+    res.json({ success: true, message: 'Produit supprimé avec succès' });
+    
+  } catch (error) {
+    console.error('Erreur suppression produit:', error);
+    res.status(500).json({ error: 'Erreur lors de la suppression du produit' });
+  }
+});
 
 // --- Lancement serveur ---
 app.listen(PORT, () => console.log(`✅ Serveur lancé sur http://localhost:${PORT}`));
