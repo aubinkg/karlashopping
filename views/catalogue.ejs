@@ -638,6 +638,7 @@
     cursor: pointer;
 }
     </style>
+
 </head>
 <body>
     <%- include('partials/header') %>
@@ -728,11 +729,12 @@
                 <div class="product-image">
                     <img src="<%= product.main_image_url %>" alt="<%= product.title %>">
                     <% if (isAdmin) { %>
-                        <button class="btn-delete" onclick="confirmDelete(<%= product.id %>)">
+                        <button class="btn-delete" onclick="confirmDelete('<%= product.id %>')">
                             <i class="fas fa-trash"></i>
                         </button>
                     <% } %>
                 </div>
+
                 <div class="product-info">
                     <h2><%= product.title %></h2>
                     <div class="product-meta">
@@ -766,19 +768,21 @@
     <%- include('partials/footer') %>
 
    <script>
-  
   async function confirmDelete(productId) {
   if (confirm("Voulez-vous vraiment supprimer ce produit ?")) {
     try {
       const response = await fetch(`/api/products/${productId}`, {
-        method: 'DELETE'
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' }
       });
 
       if (response.ok) {
+        // Supprime directement l’élément du DOM
         document.getElementById(`product-${productId}`).remove();
+        alert("Produit supprimé avec succès !");
       } else {
         const err = await response.json();
-        alert("Erreur: " + (err.error || "suppression échouée"));
+        alert("Erreur: " + (err.error || "La suppression a échoué"));
       }
     } catch (err) {
       console.error("Erreur fetch :", err);
@@ -786,7 +790,6 @@
     }
   }
 }
-
     // Le reste de votre code pour les autres fonctionnalités
     document.addEventListener('DOMContentLoaded', function() {
         // Menu mobile

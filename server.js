@@ -31,7 +31,6 @@ app.use((req, res, next) => {
 });
 
 // ----------------- ROUTES -----------------
-
 // Page d'accueil
 app.get('/', async (req, res) => {
   try {
@@ -45,12 +44,20 @@ app.get('/', async (req, res) => {
     res.render('index', {
       title: 'Bienvenue sur Karla Shopping',
       message: 'Votre boutique en ligne préférée ! 🛍️',
+
+      // --- Métadonnées SEO ---
+      description: "Karla Shopping - Boutique en ligne avec produits de qualité, livraison rapide et paiement sécurisé.",
+      keywords: "shopping, boutique en ligne, karla shopping, produits, mode, accessoires, livraison rapide, paiement sécurisé",
+      author: "Karla Shopping",
+      canonicalUrl: "http://localhost:3000/",
+
       features: [
-        '✅ Produits de qualité',
-        '✅ Livraison rapide',
-        '✅ Service client 24/7',
-        '✅ Paiement sécurisé',
+        { title: '✅ Produits de qualité', description: 'Nos produits sont rigoureusement sélectionnés pour garantir une qualité irréprochable.' },
+        { title: '✅ Livraison rapide', description: 'Recevez vos commandes en un temps record grâce à notre logistique optimisée.' },
+        { title: '✅ Service client 24/7', description: 'Notre équipe est disponible à toute heure pour répondre à vos besoins.' },
+        { title: '✅ Paiement sécurisé', description: 'Toutes les transactions sont protégées par des protocoles de sécurité avancés.' },
       ],
+
       products,
     });
 
@@ -59,65 +66,53 @@ app.get('/', async (req, res) => {
     res.render('index', {
       title: 'Bienvenue sur Karla Shopping',
       message: 'Votre boutique en ligne préférée ! 🛍️',
+
+      // --- Métadonnées SEO fallback ---
+      description: "Karla Shopping - Découvrez nos produits disponibles en ligne avec une expérience shopping fluide.",
+      keywords: "boutique en ligne, shopping, karla, produits, ecommerce",
+      author: "Karla Shopping",
+      canonicalUrl: "http://localhost:3000/",
+
       features: [
-        '✅ Produits de qualité',
-        '✅ Livraison rapide',
-        '✅ Service client 24/7',
-        '✅ Paiement sécurisé',
+        { title: '✅ Produits de qualité', description: 'Nos produits sont rigoureusement sélectionnés pour garantir une qualité irréprochable.' },
+        { title: '✅ Livraison rapide', description: 'Recevez vos commandes en un temps record grâce à notre logistique optimisée.' },
+        { title: '✅ Service client 24/7', description: 'Notre équipe est disponible à toute heure pour répondre à vos besoins.' },
+        { title: '✅ Paiement sécurisé', description: 'Toutes les transactions sont protégées par des protocoles de sécurité avancés.' },
       ],
+
       products: [],
     });
   }
 });
 
-// Page produits
-app.get('/products', (req, res) => {
-  res.render('products', { title: 'Nos Produits' });
-});
+// Page détail produit
+app.get('/produit/:id', async (req, res) => {
+  const { id } = req.params;
 
-// Déconnexion
-app.get('/logout', (req, res) => {
-  req.session.destroy(() => res.redirect('/'));
-});
+  const { data: product, error } = await supabase
+    .from('data')
+    .select('*')
+    .eq('id', id)
+    .single();
 
-// --- SIGNUP ---
-app.post('/signup', async (req, res) => {
-  const { email, password } = req.body;
-
-  const { data, error } = await supabase.auth.signUp({ email, password });
-
-  if (error) {
-    if (error.message.includes('User already registered')) {
-      const { data: loginData, error: loginError } = await supabase.auth.signInWithPassword({ email, password });
-      if (loginError) return res.send(loginError.message);
-
-      const user = loginData.user;
-      const { data: adminRecord } = await supabase
-        .from('app_admins')
-        .select('*')
-        .eq('id', user.id)
-        .maybeSingle();
-
-      req.session.user = { id: user.id, email: user.email };
-      req.session.isAdmin = !!adminRecord;
-
-      return res.redirect('/');
-    }
-    return res.send(error.message);
+  if (error || !product) {
+    return res.status(404).render('404', { message: 'Produit introuvable' });
   }
 
-  const user = data.user;
-  const { data: adminRecord } = await supabase
-    .from('app_admins')
-    .select('*')
-    .eq('id', user.id)
-    .maybeSingle();
+  res.render('product_detail', {
+    title: product.title,
+    product,
 
-  req.session.user = { id: user.id, email: user.email };
-  req.session.isAdmin = !!adminRecord;
+    // --- Métadonnées dynamiques ---
+    description: product.description || `Découvrez ${product.title} sur Karla Shopping.`,
+    keywords: `${product.title}, ${product.brand}, ${product.category}, shopping, karla`,
+    author: "Karla Shopping",
+    canonicalUrl: `http://localhost:3000/produit/${id}`,
 
-  res.redirect('/');
+    isAdmin: req.session.isAdmin || false
+  });
 });
+
 
 // --- LOGIN ---
 app.post('/login', async (req, res) => {
@@ -325,6 +320,11 @@ app.get('/produit/:id', async (req, res) => {
   res.render('product_detail', {
     title: product.title,
     product,
+     // Métadonnées dynamiques
+    description: product.description || `Découvrez ${product.title} sur Karla Shopping.`,
+    keywords: `${product.title}, ${product.brand}, ${product.category}, shopping, karla shopping`,
+    author: "Karla Shopping",
+    canonicalUrl: `http://localhost:3000/produit/${id}`,
     isAdmin: req.session.isAdmin || false // ← AJOUT DE isAdmin pour la page détail aussi
   });
 });
