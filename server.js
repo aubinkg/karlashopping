@@ -71,7 +71,7 @@ app.get('/', async (req, res) => {
       description: "Karla Shopping - Découvrez nos produits disponibles en ligne avec une expérience shopping fluide.",
       keywords: "boutique en ligne, shopping, karla, produits, ecommerce",
       author: "Karla Shopping",
-      canonicalUrl: "http://localhost:3000/",
+      canonicalUrl: "https://karlashopping.onrender.com/",
 
       features: [
         { title: '✅ Produits de qualité', description: 'Nos produits sont rigoureusement sélectionnés pour garantir une qualité irréprochable.' },
@@ -107,7 +107,7 @@ app.get('/produit/:id', async (req, res) => {
     description: product.description || `Découvrez ${product.title} sur Karla Shopping.`,
     keywords: `${product.title}, ${product.brand}, ${product.category}, shopping, karla`,
     author: "Karla Shopping",
-    canonicalUrl: `http://localhost:3000/produit/${id}`,
+    canonicalUrl: `https://karlashopping.onrender.com/produit/${id}`,
 
     isAdmin: req.session.isAdmin || false
   });
@@ -324,7 +324,7 @@ app.get('/produit/:id', async (req, res) => {
     description: product.description || `Découvrez ${product.title} sur Karla Shopping.`,
     keywords: `${product.title}, ${product.brand}, ${product.category}, shopping, karla shopping`,
     author: "Karla Shopping",
-    canonicalUrl: `http://localhost:3000/produit/${id}`,
+    canonicalUrl:`https://karlashopping.onrender.com/produit/${id}`,
     isAdmin: req.session.isAdmin || false // ← AJOUT DE isAdmin pour la page détail aussi
   });
 });
@@ -408,6 +408,57 @@ app.delete('/api/products/:id', async (req, res) => {
     res.status(500).json({ error: 'Erreur lors de la suppression du produit' });
   }
 });
+//
+app.get('/sitemap.xml', async (req, res) => {
+  try {
+    const { data: products, error } = await supabase
+      .from('data')
+      .select('id, updated_at, created_at')
+      .order('updated_at', { ascending: false });
+
+    if (error) throw error;
+
+    const today = new Date().toISOString().split('T')[0];
+
+    let urls = `
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>https://karlashopping.onrender.com/</loc>
+    <lastmod>${today}</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>1.0</priority>
+  </url>`;
+
+    products.forEach(p => {
+      const lastModDate = p.updated_at || p.created_at || today;
+      const lastMod = new Date(lastModDate).toISOString().split('T')[0];
+
+      // Calcul de la priorité : plus récent = priorité plus élevée
+      const daysSinceUpdate = Math.floor((new Date() - new Date(lastModDate)) / (1000 * 60 * 60 * 24));
+      let priority = 0.5; // valeur par défaut
+      if (daysSinceUpdate <= 7) priority = 1.0;
+      else if (daysSinceUpdate <= 30) priority = 0.9;
+      else if (daysSinceUpdate <= 90) priority = 0.8;
+
+      urls += `
+  <url>
+    <loc>https://karlashopping.onrender.com/produit/${p.id}</loc>
+    <lastmod>${lastMod}</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>${priority.toFixed(1)}</priority>
+  </url>`;
+    });
+
+    urls += `\n</urlset>`;
+
+    res.header('Content-Type', 'application/xml');
+    res.send(urls);
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Erreur génération sitemap');
+  }
+});
+
 
 // --- Lancement serveur ---
 app.listen(PORT, () => console.log(`✅ Serveur lancé sur http://localhost:${PORT}`));
